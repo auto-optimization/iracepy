@@ -3,7 +3,6 @@ import numpy as np
 from collections import OrderedDict
 
 from rpy2.robjects.packages import importr
-from rpy2.robjects import r as R
 from rpy2.robjects import numpy2ri
 numpy2ri.activate()
 import rpy2.rinterface as ri
@@ -12,7 +11,7 @@ from rpy2.robjects.functions import SignatureTranslatedFunction
 
 def r_to_python(data):
     """
-    step through an R object recursively and convert the types to python types as appropriate. 
+    Step through an R object recursively and convert the types to python types as appropriate. 
     Leaves will be converted to e.g. numpy arrays or lists as appropriate and the whole tree to a dictionary.
     """
     r_dict_types = [DataFrame, ListVector, ListSexpVector]
