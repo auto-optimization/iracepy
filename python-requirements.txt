@@ -1,0 +1,3 @@
+numpy
+rpy2 >= 3.2.6
+scipy
