@@ -10,8 +10,9 @@
  
 ## TODO
 
- [ ] Make it a proper Python package
- [ ] Implement all functionality available in irace
+ - [ ] Make it a proper Python package
+ - [ ] Implement all functionality available in irace
+ - [ ]  Integrate capping methods: https://github.com/souzamarcelo/capopt
 
 
 
