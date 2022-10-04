@@ -12,7 +12,9 @@
 
  - [ ] Make it a proper Python package
  - [ ] Implement all functionality available in irace
- - [ ]  Integrate capping methods: https://github.com/souzamarcelo/capopt
+ - [ ] ACOTSP example
+ - [ ] Add more examples.
+ - [ ] Integrate capping methods: https://github.com/souzamarcelo/capopt
 
 
 
