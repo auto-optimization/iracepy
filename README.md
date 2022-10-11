@@ -1,5 +1,9 @@
 # Example of using irace from Python. #
 
+## HELP WANTED
+
+Unfortunately, I do not have enough time to extend and maintain iracepy on my own. If you are interested in Python and automatic algorithm configuration and would like to take ownership of this project, please feel free to contact me!
+
 ## Usage
 
  * You need to install R and the irace package: https://github.com/MLopez-Ibanez/irace/
