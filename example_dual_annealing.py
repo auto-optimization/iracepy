@@ -4,11 +4,14 @@ from scipy.optimize import dual_annealing
 from irace import irace
 from irace import r_to_python
 
-def target_runner(experiment, scenario):
-    DIM = 10
+DIM=10 # This works even with parallel
+LB = [-5.12]
+UB = [5.12]
+# This target_runner is over-complicated on purpose to show what is possible.
+def target_runner(experiment, scenario, lb = LB, ub = UB):
     func = lambda x: np.sum(x*x - DIM*np.cos(2*np.pi*x)) + DIM * np.size(x)
-    lw = [-5.12] * DIM
-    up = [5.12] * DIM
+    lw = lb * DIM
+    up = ub * DIM
     # Some configurations produced a warning, but the values are within the limits. That seems a bug in scipy. TODO: Report the bug to scipy.
     print(f'{experiment["configuration"]}')
     ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=experiment['seed'], maxfun = 1e4,
@@ -38,7 +41,7 @@ scenario = dict(
     maxExperiments = 500,
     debugLevel = 3,
     digits = 5,
-    parallel=1, # It can run in parallel ! 
+    parallel=2, # It can run in parallel ! 
     logFile = "")
 
 
