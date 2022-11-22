@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import numpy as np
 import pandas as pd
+from typing import Union
 
 from rpy2.robjects.packages import importr, PackageNotInstalledError
 import rpy2.robjects as ro
@@ -13,6 +14,12 @@ from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector,
 from rpy2.robjects.functions import SignatureTranslatedFunction
 from rpy2.robjects import NA_Character
 import traceback
+from rpy2.robjects.packages import PackageNotInstalledError
+from .errors import irace_assert
+
+# Re export useful Functions
+from .expressions import Symbol, Min, Max, Round, Floor, Ceiling, Trunc, In, List
+from .parameters import Integer, Real, Ordinal, Categorical, Param, Parameters
 
 base = importr('base')
 
@@ -72,11 +79,16 @@ class irace:
     except PackageNotInstalledError as e:
         raise PackageNotInstalledError('The R package irace needs to be installed for this python binding to work. Consider running `Rscript -e "install.packages(\'irace\', repos=\'https://cloud.r-project.org\')"` in your shell. See more details at https://github.com/mLopez-Ibanez/irace#quick-start') from e
 
-    def __init__(self, scenario, parameters_table, target_runner):
+    def __init__(self, scenario, parameters: Union[Parameters, str], target_runner):
         self.scenario = scenario
         if 'instances' in scenario:
             self.scenario['instances'] = np.asarray(scenario['instances'])
-        self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))
+        if isinstance(parameters, Parameters):
+            self.parameters = parameters._export()
+        elif isinstance(parameters, str):
+            self.parameters = self._pkg.readParameters(text=parameters, digits=scenario.get('digits', 4))
+        else:
+            raise ValueError(f"parameters needs to be type irace.Parameters or string, but {type(parameters)} is found.")
         # IMPORTANT: We need to save this in a variable or it will be garbage
         # collected by Python and crash later.
         self.r_target_runner = make_target_runner(target_runner)
