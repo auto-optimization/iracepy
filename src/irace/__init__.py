@@ -4,7 +4,10 @@ import numpy as np
 import pandas as pd
 
 from rpy2.robjects.packages import importr
+import rpy2.robjects as ro
+from rpy2.robjects import pandas2ri
 from rpy2.robjects import numpy2ri
+from rpy2.robjects.conversion import localconverter
 numpy2ri.activate()
 import rpy2.rinterface as ri
 from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector, StrVector, ListVector, IntArray, Matrix, ListSexpVector,FloatSexpVector,IntSexpVector,StrSexpVector,BoolSexpVector
@@ -102,10 +105,9 @@ class irace:
         """Returns a Pandas DataFrame, one column per parameter and the row index are the configuration ID."""
         self.scenario['targetRunner'] = self.r_target_runner
         res = self._pkg.irace(ListVector(self.scenario), self.parameters)
-        res = pd.DataFrame(res)
-        # ID should be already strings but it seems R is storing them as
-        # floating-point.
-        res.index = res['.ID.'].astype(int).astype(str).values
+        with localconverter(ro.default_converter + pandas2ri.converter):
+            res = ro.conversion.rpy2py(res)
         # Remove metadata columns.
         res = res.loc[:, ~res.columns.str.startswith('.')]
+        res.applymap(r_to_python)
         return res
