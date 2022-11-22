@@ -18,10 +18,11 @@ Unfortunately, I do not have enough time to extend and maintain iracepy on my ow
  * See the example in `example_dual_annealing.py`
  
  * Any help/requests/suggestions are welcome.
+
+Since this package is still under development, API **will** change and features might even be removed. We suggest you wait until it's more or less finalized. If you really want to use it now, we recommend you fork this repository and maintain it yourself so you don't rugpulled when we make updates.
  
 ## TODO
 
- - [ ] Make it a proper Python package
  - [ ] Implement all functionality available in irace
  - [ ] ACOTSP example
  - [ ] Add more examples.
