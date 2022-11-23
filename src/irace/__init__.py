@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import math
 import numpy as np
 import pandas as pd
 
@@ -8,6 +9,7 @@ numpy2ri.activate()
 import rpy2.rinterface as ri
 from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector, StrVector, ListVector, IntArray, Matrix, ListSexpVector,FloatSexpVector,IntSexpVector,StrSexpVector,BoolSexpVector
 from rpy2.robjects.functions import SignatureTranslatedFunction
+from rpy2.robjects import NA_Character
 
 base = importr('base')
 
@@ -20,6 +22,8 @@ def r_to_python(data):
         return data  # TODO: get the actual Python function
     elif data == ri.NULL:
         return None
+    elif data == NA_Character:
+        return None
     elif hasattr(data, "rclass"):
         if data.rclass[0] in ['list','data.frame']:
             return OrderedDict(zip(data.names, [r_to_python(elt) for elt in data]))
@@ -31,7 +35,10 @@ def r_to_python(data):
             return r_to_python(base.as_character(data))
         elif data.rclass[0] == 'character':
             if len(data) == 1:
-                return str(data[0])
+                if data[0] == NA_Character:
+                    return None
+                else:
+                    return str(data[0])
             return [str(x) for x in data]
         else:
             raise KeyError(f'Could not proceed, type {type(data)} of rclass ({data.rclass[0]}) is not defined!')
@@ -42,6 +49,15 @@ def make_target_runner(py_target_runner):
     def tmp_r_target_runner(experiment, scenario):
         py_experiment = r_to_python(experiment)
         py_scenario = r_to_python(scenario)
+
+        # Filter all the NaN from keys in the dictionary
+        configuration = py_experiment['configuration']
+        configuration_list = []
+        for key in configuration: 
+            if not pd.isna(configuration[key]): # Filter all the nan values
+                configuration_list.append((key, configuration[key]))
+        py_experiment['configuration'] = OrderedDict(configuration_list)
+
         ret = py_target_runner(py_experiment, py_scenario)
         # TODO: return also error codes and call for debugging.
         return ListVector(ret)
