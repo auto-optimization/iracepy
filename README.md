@@ -12,6 +12,7 @@ Unfortunately, I do not have enough time to extend and maintain iracepy on my ow
         pip3 install -r requirements.txt
      ```
   1. Install R packages using `install.py`
+  1. (GitHub) Install with: `pip install .`
 
 ## Usage
 
