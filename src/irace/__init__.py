@@ -13,7 +13,7 @@ import rpy2.rinterface as ri
 from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector, StrVector, ListVector, IntArray, Matrix, ListSexpVector,FloatSexpVector,IntSexpVector,StrSexpVector,BoolSexpVector
 from rpy2.robjects.functions import SignatureTranslatedFunction
 from rpy2.robjects import NA_Character
-
+import traceback
 base = importr('base')
 
 def r_to_python(data):
@@ -60,9 +60,11 @@ def make_target_runner(py_target_runner):
             if not pd.isna(configuration[key]): # Filter all the nan values
                 configuration_list.append((key, configuration[key]))
         py_experiment['configuration'] = OrderedDict(configuration_list)
-
-        ret = py_target_runner(py_experiment, py_scenario)
-        # TODO: return also error codes and call for debugging.
+        try:
+            ret = py_target_runner(py_experiment, py_scenario)
+        except:
+            traceback.print_exc()
+            ret = dict(error=traceback.format_exc())
         return ListVector(ret)
     return tmp_r_target_runner
 
