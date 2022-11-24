@@ -79,9 +79,13 @@ class irace:
         # collected by Python and crash later.
         self.r_target_runner = make_target_runner(target_runner)
 
-    def read_configurations(self, filename=None, text=None):
-        if text is None:
+    def read_configurations(self, filename=None, text=None, r_data_frame=None):
+        if r_data_frame is None and filename is None and text is not None:
+            confs = self._pkg.readConfigurationsFile(text = text, parameters = self.parameters)
+        elif r_data_frame is None and filename is not None:
             confs = self._pkg.readConfigurationsFile(filename = filename, parameters = self.parameters)
+        elif r_data_frame is not None:
+            confs = self._pkg.readConfigurationsFile(configurationTable = r_data_frame, parameters = self.parameters)
         else:
             confs = self._pkg.readConfigurationsFile(text = text, parameters = self.parameters)
         # FIXME: can we save this converter to use it every where?
@@ -99,7 +103,15 @@ class irace:
         confs = self.read_configurations(text = text)
         self.set_initial(confs)
         return confs
-    
+
+    def set_initial_from_data_frame(self, data_frame):
+        with localconverter(ro.default_converter + pandas2ri.converter):
+            rdf = ro.conversion.py2rpy(data_frame)
+        print(rdf)
+        confs = self.read_configurations(r_data_frame = rdf)
+        self.set_initial(confs)
+        return confs
+
     def set_initial(self, x):
         if isinstance(x, pd.DataFrame):
             x = x.to_records(index=False)
