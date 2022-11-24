@@ -82,7 +82,11 @@ class irace:
             confs = self._pkg.readConfigurationsFile(filename = filename, parameters = self.parameters)
         else:
             confs = self._pkg.readConfigurationsFile(text = text, parameters = self.parameters)
-        return pd.DataFrame(confs)
+        # FIXME: can we save this converter to use it every where?
+        with localconverter(ro.default_converter + pandas2ri.converter):
+            confs = ro.conversion.rpy2py(confs)
+        assert isinstance(confs,pd.DataFrame)
+        return confs
 
     def set_initial_from_file(self, filename):
         confs = self.read_configurations(filename = filename)
@@ -95,7 +99,7 @@ class irace:
         return confs
     
     def set_initial(self, x):
-        if isinstance(x,pd.DataFrame):
+        if isinstance(x, pd.DataFrame):
             x = x.to_records(index=False)
         assert isinstance(x, np.recarray)
         self.scenario['initConfigurations'] = x
