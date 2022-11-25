@@ -1,4 +1,0 @@
-numpy
-rpy2 >= 3.5.6
-scipy
-pandas>=1.0.0

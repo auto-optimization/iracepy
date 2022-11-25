@@ -1,0 +1,68 @@
+# Forked from: https://github.com/ipython/ipython/blob/master/.github/workflows/test.yml
+
+name: Run tests for dev
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - '*.x'
+      - dev
+  pull_request:
+    branches:
+      - 
+  workflow_dispatch:
+
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.12-dev"]
+        r-version: ["devel"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: pip
+      
+    - name: Set up R 
+      uses: r-lib/actions/setup-r@v2
+      with:
+        r-version: ${{ matrix.r-version }}
+    
+    - name: Install devtools dependencies
+      run: |
+        sudo apt-get -y build-dep libcurl4-gnutls-dev
+        sudo apt-get -y install libcurl4-gnutls-dev
+
+    - name: Install devtools
+      run: install.packages('devtools', repos='https://cloud.r-project.org')
+      shell: Rscript {0}
+    
+    - name: Install irace from Github
+      run: devtools::install_github('MLopez-Ibanez/irace')
+      shell: Rscript {0}
+      env:
+        GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install and update Python dependencies
+      run: |
+        python -m pip install --upgrade -r requirements.txt
+
+    - name: pytest
+      env:
+        COLUMNS: 120
+        PYTHONPATH: src
+      run: |
+        python3 -m pytest --color=yes -raXxs --cov --cov-report=xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+
