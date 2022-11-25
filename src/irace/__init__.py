@@ -14,6 +14,7 @@ from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector,
 from rpy2.robjects.functions import SignatureTranslatedFunction
 from rpy2.robjects import NA_Character
 import traceback
+from rpy2.robjects.packages import PackageNotInstalledError
 base = importr('base')
 
 def r_to_python(data):
@@ -70,8 +71,10 @@ def make_target_runner(py_target_runner):
 
 class irace:
     # Imported R package
-    _pkg = importr("irace")
-    
+    try:
+        _pkg = importr("irace")
+    except PackageNotInstalledError as e:
+        raise PackageNotInstalledError('The R package irace needs to be installed for this python binding to work. Consider running `Rscript -e "install.packages(\'irace\', repos=\'https://cloud.r-project.org\')"` in your shell. See more details at https://github.com/mLopez-Ibanez/irace#quick-start') from e
     def __init__(self, scenario, parameters_table, target_runner):
         self.scenario = scenario
         self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))
