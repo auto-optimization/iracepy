@@ -47,8 +47,8 @@ jobs:
     
     - uses: r-lib/actions/setup-r-dependencies@v2
       with:
-        packages: devtools github::MLopez-Ibanez/irace
-        dependencies: "none"
+        packages: github::MLopez-Ibanez/irace
+        dependencies: '"none"'
  
     - name: Install irace from github
       run: |
