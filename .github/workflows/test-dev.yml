@@ -23,9 +23,11 @@ jobs:
         os: [ubuntu-latest]
         python-version: ["3.11"]
         r-version: ["devel"]
+        http-user-agent: 'release'
 
     steps:
     - uses: actions/checkout@v3
+      
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -38,15 +40,10 @@ jobs:
       with:
         r-version: ${{ matrix.r-version }}
     
-    - name: Install devtools dependencies
-      run: |
-        sudo apt-get install -y libcurl4-openssl-dev libssl-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev
-
-    - name: Install devtools
-      run: |
-        install.packages('devtools', repos='https://cloud.r-project.org')
-      shell: Rscript {0}
-    
+    - uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        extra-packages: devtools
+ 
     - name: Install irace from Github
       run: devtools::install_github('MLopez-Ibanez/irace')
       shell: Rscript {0}
