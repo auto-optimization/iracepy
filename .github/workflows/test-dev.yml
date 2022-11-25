@@ -4,14 +4,7 @@ name: Run tests for dev
 
 on:
   push:
-    branches:
-      - main
-      - master
-      - '*.x'
-      - dev
   pull_request:
-    branches:
-      - dev
   workflow_dispatch:
 
 
