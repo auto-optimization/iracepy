@@ -16,7 +16,7 @@ Unfortunately, I do not have enough time to extend and maintain iracepy on my ow
 
 ## Usage
 
- * See the example in `example_dual_annealing.py`
+ * See the examples in `examples/`
  
  * Any help/requests/suggestions are welcome.
 
