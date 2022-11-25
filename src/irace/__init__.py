@@ -74,7 +74,7 @@ class irace:
     
     def __init__(self, scenario, parameters_table, target_runner):
         self.scenario = scenario
-        self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario['digits'])
+        self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))
         # IMPORTANT: We need to save this in a variable or it will be garbage
         # collected by Python and crash later.
         self.r_target_runner = make_target_runner(target_runner)
