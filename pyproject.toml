@@ -10,7 +10,7 @@ authors = [
     {name = "Deyao Chen", email = "chendeyao000@gmail.com"}
 ]
 
-description = "A python bidning for irace"
+description = "A python binding for irace"
 readme = "README.md"
 requires-python = ">=3.7"
 
