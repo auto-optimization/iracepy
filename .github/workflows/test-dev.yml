@@ -51,6 +51,7 @@ jobs:
       with:
         extra-packages: cran::XML
         packages: github::MLopez-Ibanez/irace
+        dependencies: '"hard"'
 
     - name: Install iracepy
       run: python -m pip install --upgrade .
