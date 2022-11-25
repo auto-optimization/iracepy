@@ -3,8 +3,6 @@ from irace import irace
 
 import json
 def target_runner(experiment, scenario):
-    with open('abc.json', 'w') as f:
-        json.dump(experiment, f)
     return dict(cost=experiment['configuration']['one'])
 
 
@@ -16,7 +14,8 @@ scenario = dict(
     instances = np.arange(10),
     maxExperiments = 96,
     debugLevel = 0,
-    parallel = 1
+    parallel = 1,
+    logFile = ""
 )
 
 
