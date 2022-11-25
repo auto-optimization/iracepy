@@ -59,7 +59,7 @@ jobs:
 
     - name: Install and update Python dependencies
       run: |
-        python -m pip install --upgrade -r test/requirements.txt
+        python -m pip install --upgrade -r tests/requirements.txt
 
     - name: pytest
       env:
