@@ -47,7 +47,7 @@ def r_to_python(data):
         else:
             raise KeyError(f'Could not proceed, type {type(data)} of rclass ({data.rclass[0]}) is not defined!')
     return data  # We reached the end of recursion
-    
+
 def make_target_runner(py_target_runner):
     @ri.rternalize
     def tmp_r_target_runner(experiment, scenario):
@@ -55,12 +55,9 @@ def make_target_runner(py_target_runner):
         py_scenario = r_to_python(scenario)
 
         # Filter all the NaN from keys in the dictionary
-        configuration = py_experiment['configuration']
-        configuration_list = []
-        for key in configuration: 
-            if not pd.isna(configuration[key]): # Filter all the nan values
-                configuration_list.append((key, configuration[key]))
-        py_experiment['configuration'] = OrderedDict(configuration_list)
+        py_experiment['configuration'] = OrderedDict(
+            (k,v) for k,v in py_experiment['configuration'].items() if not pd.isna(v)
+        )
         try:
             ret = py_target_runner(py_experiment, py_scenario)
         except:
@@ -75,6 +72,7 @@ class irace:
         _pkg = importr("irace")
     except PackageNotInstalledError as e:
         raise PackageNotInstalledError('The R package irace needs to be installed for this python binding to work. Consider running `Rscript -e "install.packages(\'irace\', repos=\'https://cloud.r-project.org\')"` in your shell. See more details at https://github.com/mLopez-Ibanez/irace#quick-start') from e
+
     def __init__(self, scenario, parameters_table, target_runner):
         self.scenario = scenario
         self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))

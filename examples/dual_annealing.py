@@ -2,7 +2,6 @@ import numpy as np
 from scipy.optimize import dual_annealing
 
 from irace import irace
-from irace import r_to_python
 
 DIM=10 # This works even with parallel
 LB = [-5.12]
