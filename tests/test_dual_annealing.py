@@ -40,7 +40,7 @@ scenario = dict(
     debugLevel = 3,
     seed = 123,
     digits = 5,
-    parallel=cpu_count(), # It can run in parallel ! 
+    parallel= 2, # It can run in parallel ! 
     logFile = "")
 
 def test_run():
