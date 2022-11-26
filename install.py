@@ -1,5 +1,6 @@
+## FIXME: This doesn't work in general, we need to find another way, maybe using "pak" of installing packages from python
 # R package names
-packnames = ('irace')
+packnames = ('devtools','irace')
 
 # import rpy2's package module
 import rpy2.robjects.packages as rpackages

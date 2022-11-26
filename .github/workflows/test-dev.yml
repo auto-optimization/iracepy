@@ -11,7 +11,7 @@ on:
 jobs:
   test-dev:
     if: "! contains(github.event.head_commit.message, '[skip ci]')"
-    name: Check ${{ matrix.os }} (${{ matrix.python-version }}) (${{ matrix.r-version }})
+    name: Test dev ${{ matrix.os }} (${{ matrix.python-version }}) (${{ matrix.r-version }})
     runs-on: ${{ matrix.os }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
