@@ -3,6 +3,7 @@ from scipy.optimize import dual_annealing
 
 from irace import irace
 
+# FIXME: Use benchmark instances from scipy
 DIM=10 # This works even with parallel
 LB = [-5.12]
 UB = [5.12]
