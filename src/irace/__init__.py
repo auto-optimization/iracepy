@@ -1,9 +1,8 @@
 from collections import OrderedDict
-import math
 import numpy as np
 import pandas as pd
 
-from rpy2.robjects.packages import importr
+from rpy2.robjects.packages import importr, PackageNotInstalledError
 import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
 from rpy2.robjects import numpy2ri
@@ -14,7 +13,7 @@ from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector,
 from rpy2.robjects.functions import SignatureTranslatedFunction
 from rpy2.robjects import NA_Character
 import traceback
-from rpy2.robjects.packages import PackageNotInstalledError
+
 base = importr('base')
 
 def r_to_python(data):
@@ -75,6 +74,8 @@ class irace:
 
     def __init__(self, scenario, parameters_table, target_runner):
         self.scenario = scenario
+        if 'instances' in scenario:
+            self.scenario['instances'] = np.asarray(scenario['instances'])
         self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))
         # IMPORTANT: We need to save this in a variable or it will be garbage
         # collected by Python and crash later.
