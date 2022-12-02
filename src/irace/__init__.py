@@ -117,5 +117,4 @@ class irace:
             res = ro.conversion.rpy2py(res)
         # Remove metadata columns.
         res = res.loc[:, ~res.columns.str.startswith('.')]
-        res.applymap(r_to_python)
-        return res
+        return res.applymap(r_to_python)
