@@ -38,7 +38,3 @@ def test():
                 or isinstance(v, str) \
                 or isinstance(v, float) \
                 or isinstance(v, int)
-
-
-if __name__ == '__main__':
-    test()
