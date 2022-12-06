@@ -1,9 +1,5 @@
 import numpy as np
-from scipy.optimize import dual_annealing
-
 from irace import irace
-from irace import r_to_python
-from multiprocessing import cpu_count
 
 DIM=10 # This works even with parallel
 LB = [-5.12]
@@ -13,6 +9,8 @@ def target_runner(experiment, scenario, lb = LB, ub = UB):
     func = lambda x: np.sum(x*x - DIM*np.cos(2*np.pi*x)) + DIM * np.size(x)
     lw = lb * DIM
     up = ub * DIM
+    if experiment['configuration']['initial_temp'] == 1:
+        assert 'integer' not in experiment['configuration']
     # No actual computation because computation is expensive and we don't care about it.
     return dict(cost=experiment['configuration']['initial_temp'])
 
@@ -21,13 +19,14 @@ initial_temp       "" r,log (0.02, 5e4)
 restart_temp_ratio "" r,log (1e-5, 1)
 visit              "" r     (1.001, 3)
 accept             "" r     (-1e3, -5)
+integer            "" i     (1, 10)     |  no_local_search == "1"
 # TODO: irace does not have a type boolean yet.
 no_local_search    "" c     ("","1") 
 '''
 
 default_values = '''
-initial_temp restart_temp_ratio visit accept no_local_search
-5230         2e-5               2.62  -5.0   ""
+initial_temp restart_temp_ratio visit accept integer no_local_search
+5230         2e-5               2.62  -5.0   NA        ""
 '''
 
 # These are dummy "instances", we are tuning only on a single function.
@@ -47,5 +46,6 @@ def test_run():
     tuner = irace(scenario, parameters_table, target_runner)
     tuner.set_initial_from_str(default_values)
     best_confs = tuner.run()
-    # Pandas DataFrame
+    # FIXME: assert type Pandas DataFrame
     print(best_confs)
+

@@ -5,6 +5,10 @@ import pandas as pd
 import json
 def target_runner(experiment, scenario):
     if experiment['configuration']['one'] == '0':
+        assert 'two' not in experiment['configuration']
+        assert 'three' not in experiment['configuration']
+        assert 'four' not in experiment['configuration']
+    if experiment['configuration']['one'] == '0':
         return dict(cost=0)
     else:
         return dict(cost=1)
@@ -33,8 +37,7 @@ def test():
     print(best_conf)
     for rowIndex, row in best_conf.iterrows(): #iterate over rows
         for columnIndex, v in row.items():
-            assert v is None \
-                or v == np.nan \
+            assert pd.isna(v) \
                 or isinstance(v, str) \
                 or isinstance(v, float) \
                 or isinstance(v, int)
