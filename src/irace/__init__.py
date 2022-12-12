@@ -56,7 +56,11 @@ def r_to_python(data):
             with localconverter(irace_converter):
               return ro.conversion.rpy2py(data)  
         elif data.rclass[0] == 'list':
-            return OrderedDict(zip(data.names, [r_to_python(elt) for elt in data]))
+            if isinstance(data.names, ri.NULLType):
+                keys = range(len(data))
+            else:
+                keys = data.names 
+            return OrderedDict(zip(keys, [r_to_python(elt) for elt in data]))
         elif data.rclass[0] in ['numeric','logical','integer','RTYPES.INTSXP','array','RTYPES.LGLSXP']:
             if len(data) == 1:
                 return data[0]
