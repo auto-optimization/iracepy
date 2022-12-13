@@ -11,6 +11,9 @@ from rpy2.robjects.conversion import localconverter
 from rpy2 import rinterface as ri
 from rpy2.rinterface_lib import na_values
 from rpy2.rinterface_lib.sexp import NACharacterType
+from multiprocessing import Queue, Process
+import json
+from rpy2.rinterface_lib.sexp import NACharacterType
 
 irace_converter =  ro.default_converter + numpy2ri.converter + pandas2ri.converter
 
@@ -71,30 +74,66 @@ def r_to_python(data):
             raise KeyError(f'Could not proceed, type {type(data)} of rclass ({data.rclass[0]}) is not defined!')
     return data  # We reached the end of recursion
 
-def make_target_runner(py_target_runner):
-    @ri.rternalize
-    def tmp_r_target_runner(experiment, scenario):
-        py_experiment = r_to_python(experiment)
-        py_scenario = r_to_python(scenario)
-        # FIXME: How to skip this conversion?
-        py_experiment['configuration'] = py_experiment['configuration'].to_dict('records')[0]
-        # FIXME: We should also filter 'switches'
-        # Filter all the NaN from keys in the dictionary
-        py_experiment['configuration'] = OrderedDict(
-            (k,v) for k,v in py_experiment['configuration'].items() if not pd.isna(v)
-        )
-        try:
-            with localconverter(irace_converter_hack):
-                ret = py_target_runner(py_experiment, py_scenario)
-        except:
-            traceback.print_exc()
-            ret = dict(error=traceback.format_exc())
-        return ListVector(ret)
-    return tmp_r_target_runner
+def run_with_catch(f, args, kwargs):
+    try:
+        res = f(*args, **kwargs)
+    except:
+        res = dict(error=traceback.format_exc())
+    return res
 
-def check_windows(scenario):
-    if scenario.get('parallel', 1) != 1 and os.name == 'nt':
-        raise NotImplementedError('Parallel running on windows is not supported yet. Follow https://github.com/auto-optimization/iracepy/issues/16 for updates. Alternatively, use Linux or MacOS or the irace R package directly.')
+def make_target_runner_parallel(aq: Queue, rq: Queue, check_output_target_runner, scenario_a, target_runner, has_worker):
+    @ri.rternalize
+    def parallel_runner(*args, **kwargs):
+        try:
+            experiments = list(r_to_python(args[0]).values())
+            n = len(experiments)
+
+            ans = [None for i in range(n)]
+            for i, experiment in enumerate(experiments):
+                # FIXME: How to skip this conversion?
+                experiment['configuration'] = experiment['configuration'].to_dict('records')[0]
+                # FIXME: We should also filter 'switches'
+                # Filter all the NaN from keys in the dictionary
+                experiment['configuration'] = OrderedDict(
+                    (k,v) for k,v in experiment['configuration'].items() if not pd.isna(v)
+                )
+                if has_worker:
+                    aq.put((i, experiment, scenario_a[0]))
+                else:
+                    res = run_with_catch(target_runner, (experiment, scenario_a[0]), {})
+                    res = check_output_target_runner(ListVector(res), scenario_a[1])
+                    ans[i] = res
+
+            if has_worker:
+                for _ in range(n):
+                    i, res = rq.get()
+                    with localconverter(irace_converter_hack):
+                        res = check_output_target_runner(ListVector(res), scenario_a[1])
+                    ans[i] = res
+
+            return ListVector(zip(range(len(ans)), ans)) 
+        except:
+            # rpy2 swallows traceback from any r.rternalize function so we print it manually.
+            traceback.print_exc()
+            raise
+    return parallel_runner
+
+def runner_worker(target_runner, aq: Queue, rq: Queue):
+    while True:
+        i, experiment, scenario = aq.get()
+        if i == -1:
+            break
+        rq.put((i, run_with_catch(target_runner, (experiment, scenario), {})))
+
+def check_unsupported_scenarios(scenario):
+    if scenario.get('targetRunnerRetries', 1) > 1:
+        raise NotImplementedError("targetRunnerRetries is not yet supported by the python binding although it's supported in the irace R package. We recommend you to implement retries in your target runner.")
+    if 'targetRunnerParallel' in scenario:
+        raise NotImplementedError("targetRunnerParallel is not yet supported. If you need this feature, consider opening an issue to show us some people actually want to use this.")
+
+def run_irace(irace, args, q: Queue):
+    r = irace(*args)
+    q.put(r)
 
 class irace:
     # Imported R package
@@ -111,8 +150,21 @@ class irace:
             self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))
         # IMPORTANT: We need to save this in a variable or it will be garbage
         # collected by Python and crash later.
-        self.r_target_runner = make_target_runner(target_runner)
-        check_windows(scenario)
+        self.target_runner = target_runner
+        self.worker_count = max(self.scenario.get('parallel', 1), 1)
+        if self.worker_count != 1:
+            self.target_aq = Queue()
+            self.target_rq = Queue()
+        else:
+            self.target_aq = None
+            self.target_rq = None
+        self.workers: list[Process] = []
+        if self.worker_count != 1:
+            for i in range(self.worker_count):
+                self.workers.append(Process(target=runner_worker, args=(self.target_runner, self.target_aq, self.target_rq)))
+            for worker in self.workers:
+                worker.start()
+            
 
     def read_configurations(self, filename=None, text=None):
         if text is None:
@@ -146,11 +198,37 @@ class irace:
         
     def run(self):
         """Returns a Pandas DataFrame, one column per parameter and the row index are the configuration ID."""
-        self.scenario['targetRunner'] = self.r_target_runner
+        scenario_a = [None, None]
+        self.r_target_runner_parallel = make_target_runner_parallel(self.target_aq, self.target_rq, self._pkg.check_output_target_runner, scenario_a, self.target_runner, self.worker_count != 1)
+        self.scenario['targetRunnerParallel'] = self.r_target_runner_parallel
+
         with localconverter(irace_converter_hack):
-            res = self._pkg.irace(ListVector(self.scenario), self.parameters)
+            self.r_scenario = self._pkg.checkScenario(ListVector(self.scenario))
+        self.scenario = r_to_python(self.r_scenario)
+        self.scenario.pop('targetRunnerParallel', None)
+        scenario_a[0] = self.scenario
+        scenario_a[1] = self.r_scenario
+        try:
+            with localconverter(irace_converter_hack):
+                res = self._pkg.irace(self.r_scenario, self.parameters)
+            print(res)
+        except:
+            self.cleanup(True)
+            raise
+        self.cleanup(False)
         with localconverter(irace_converter):
             res = ro.conversion.rpy2py(res)
         # Remove metadata columns.
         res = res.loc[:, ~res.columns.str.startswith('.')]
         return res
+
+    def cleanup(self, forced):
+        if self.worker_count == 1:
+            return
+        if forced:
+            for worker in self.workers:
+                worker.terminate()
+        for i in range(self.worker_count):
+            self.target_aq.put((-1, None, None))
+        self.target_aq.close()
+        self.target_rq.close()
