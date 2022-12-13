@@ -17,6 +17,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.11"]
