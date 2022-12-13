@@ -90,7 +90,6 @@ def make_target_runner(py_target_runner):
         py_experiment['configuration'] = OrderedDict(
             (k,v) for k,v in py_experiment['configuration'].items() if not pd.isna(v)
         )
-        print(py_experiment['configuration'])
         try:
             ret = py_target_runner(py_experiment, py_scenario)
         except:
