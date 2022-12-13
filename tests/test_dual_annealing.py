@@ -1,5 +1,7 @@
 import numpy as np
 from irace import irace
+import os
+import pytest
 
 DIM=10 # This works even with parallel
 LB = [-5.12]
@@ -33,13 +35,19 @@ initial_temp restart_temp_ratio visit accept integer no_local_search
 instances = np.arange(100)
 
 # See https://mlopez-ibanez.github.io/irace/reference/defaultScenario.html
+
+if os.name == 'nt':
+    parallel = 1
+else:
+    parallel = 2
+
 scenario = dict(
     instances = instances,
     maxExperiments = 180,
     debugLevel = 3,
     seed = 123,
     digits = 5,
-    parallel= 2, # It can run in parallel ! 
+    parallel= parallel, # It can run in parallel ! 
     logFile = "")
 
 def test_run():
@@ -49,3 +57,18 @@ def test_run():
     # FIXME: assert type Pandas DataFrame
     print(best_confs)
 
+def test_fail_windows():
+    # FIXME: remove when https://github.com/auto-optimization/iracepy/issues/16 is closed. 
+    if os.name == 'nt':
+        with pytest.raises(NotImplementedError):
+            scenario = dict(
+                instances = instances,
+                maxExperiments = 180,
+                debugLevel = 3,
+                seed = 123,
+                digits = 5,
+                parallel= 2, # It can run in parallel ! 
+                logFile = "")
+            tuner = irace(scenario, parameters_table, target_runner)
+            tuner.run()
+            

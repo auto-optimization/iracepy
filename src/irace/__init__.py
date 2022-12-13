@@ -99,6 +99,10 @@ def make_target_runner(py_target_runner):
         return ListVector(ret)
     return tmp_r_target_runner
 
+def check_windows(scenario):
+    if scenario.get('parallel', 1) != 1 and os.name == 'nt':
+        raise NotImplementedError('Parallel running on windows is not supported yet. Follow https://github.com/auto-optimization/iracepy/issues/16 for updates. Alternatively, use Linux or MacOS or the irace R package directly.')
+
 class irace:
     # Imported R package
     try:
@@ -114,6 +118,7 @@ class irace:
         # IMPORTANT: We need to save this in a variable or it will be garbage
         # collected by Python and crash later.
         self.r_target_runner = make_target_runner(target_runner)
+        check_windows(scenario)
 
     def read_configurations(self, filename=None, text=None):
         if text is None:
