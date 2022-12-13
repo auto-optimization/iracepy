@@ -14,6 +14,7 @@ from rpy2.rinterface_lib.sexp import NACharacterType
 from multiprocessing import Queue, Process
 import json
 from rpy2.rinterface_lib.sexp import NACharacterType
+from multiprocessing import Queue, Process
 
 irace_converter =  ro.default_converter + numpy2ri.converter + pandas2ri.converter
 
