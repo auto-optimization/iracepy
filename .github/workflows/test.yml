@@ -42,7 +42,6 @@ jobs:
         packages: cran::irace
         dependencies: '"hard"'
         pak-version: devel
-        cache: false
             
     - name: Install iracepy
       run: python -m pip install --upgrade .
