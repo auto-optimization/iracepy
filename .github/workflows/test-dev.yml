@@ -32,7 +32,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         check-latest: true
-        cache: pip
+        cache: false
       
     - name: Set up R 
       uses: r-lib/actions/setup-r@v2
