@@ -47,6 +47,8 @@ def r_to_python(data):
     """
     if isinstance(data, SignatureTranslatedFunction) or isinstance(data, ri.SexpClosure):
         return data  # TODO: get the actual Python function
+    elif isinstance(data, np.ndarray):
+        return data
     elif data == ri.NULL:
         return None
     elif data == na_values.NA_Character:
