@@ -1,5 +1,4 @@
 [![Python Test](https://github.com/auto-optimization/iracepy/actions/workflows/test.yml/badge.svg)](https://github.com/auto-optimization/iracepy/actions/workflows/test.yml)
-[![Python Test for Dev](https://github.com/auto-optimization/iracepy/actions/workflows/test-dev.yml/badge.svg)](https://github.com/auto-optimization/iracepy/actions/workflows/test-dev.yml)
 [![codecov Badge](https://codecov.io/gh/auto-optimization/iracepy/branch/main/graph/badge.svg)](https://codecov.io/gh/auto-optimization/iracepy)
 
 
