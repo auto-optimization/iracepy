@@ -11,12 +11,13 @@ jobs:
   test:
     if: "! contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ${{ matrix.os }}
-    name: Test ${{ matrix.os }} (${{ matrix.python-version }}) (${{ matrix.r-version }}) (${{ matrix.r-package-source }})
+    name: Test ${{ matrix.os }} (${{ matrix.python-version }}) (pip ${{ matrix.pip-args }}) (${{ matrix.r-version }}) (${{ matrix.r-package-source }})
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.7", "3.11"]
+        pip-args: ["", "--upgrade"]
         r-version: ["release"]
         r-package-source: ["cran::irace", "github::MLopez-Ibanez/irace"]
 
@@ -42,7 +43,7 @@ jobs:
         pak-version: devel
             
     - name: Install iracepy
-      run: python3 -m pip install --upgrade .
+      run: python3 -m pip install ${{ matrix.pip-args }} .
       
     - name: Install Python dependencies
       run: python3 -m pip install -r tests/requirements.txt
