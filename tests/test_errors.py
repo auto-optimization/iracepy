@@ -5,7 +5,6 @@ from multiprocessing import Process, Queue
 from threading import Timer, Thread
 from time import sleep
 
-import json
 def target_runner(experiment, scenario):
     raise ValueError()
 
@@ -28,7 +27,6 @@ scenario = dict(
 
 killed = False
 
-irace_exit = Queue()
 def test_no_hang():
     p = Process(target=start_irace)
     p.start()
@@ -53,6 +51,3 @@ def start_irace():
     tuner = irace(scenario, params, target_runner)
     tuner.set_initial(defaults)
     best_conf = tuner.run()
-
-if __name__ == '__main__':
-    test_no_hang()
