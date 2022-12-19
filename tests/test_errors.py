@@ -8,7 +8,6 @@ from time import sleep
 import json
 def target_runner(experiment, scenario):
     raise ValueError()
-    return dict(cost=experiment['configuration']['one'])
 
 
 params = '''
@@ -33,13 +32,20 @@ irace_exit = Queue()
 def test_no_hang():
     p = Process(target=start_irace)
     p.start()
-    Timer(1, kill_process, args=(p,)).start()
-    sleep(2)
+    Timer(1, sigterm_process, args=(p,)).start()
+    Timer(2, sigkill_process, args=(p,)).start()
+    sleep(3)
     assert not killed 
 
-def kill_process(p):
+def sigterm_process(p):
     if p.is_alive():
         p.terminate()
+        global killed
+        killed = True
+
+def sigkill_process(p):
+    if p.is_alive():
+        p.kill()
         global killed
         killed = True
 
