@@ -27,12 +27,14 @@ scenario = dict(
 
 killed = False
 
+
 def test_no_hang():
-    p = Process(target=start_irace)
+    q = Queue()
+    p = Process(target=start_irace, args=(q,))
     p.start()
-    Timer(1, sigterm_process, args=(p,)).start()
-    Timer(2, sigkill_process, args=(p,)).start()
-    sleep(3)
+    Timer(0.1, sigterm_process, args=(p,)).start()
+    Timer(0.2, sigkill_process, args=(p,)).start()
+    sleep(0.3)
     assert not killed 
 
 def sigterm_process(p):
@@ -47,7 +49,22 @@ def sigkill_process(p):
         global killed
         killed = True
 
-def start_irace():
+def start_irace(q):
     tuner = irace(scenario, params, target_runner)
     tuner.set_initial(defaults)
-    best_conf = tuner.run()
+    try:
+        best_conf = tuner.run()
+    except:
+        q.put(0)
+
+def test_correct_exit():
+    q = Queue()
+    p = Process(target=start_irace, args=(q,))
+    p.start()
+    Timer(0.1, sigterm_process, args=(p,)).start()
+    Timer(0.2, sigkill_process, args=(p,)).start()
+    sleep(0.3)
+    assert not q.empty()
+
+if __name__ == '__main__':
+    test_correct_exit()
