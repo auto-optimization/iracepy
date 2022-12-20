@@ -12,11 +12,14 @@ Unfortunately, I do not have enough time to extend and maintain iracepy on my ow
 
   1. Install R: https://github.com/MLopez-Ibanez/irace#installing-r
   1. Install python packages:
-     ```bash
-        pip3 install -r requirements.txt
-     ```
-  1. Install R packages using `install.py`
-  1. (GitHub) Install with: `pip install .`
+      ```bash
+      pip install git+https://github.com/auto-optimization/iracepy@main
+      ```
+  1. Install R packages with 
+      ```bash
+      Rscript -e "install.packages('irace', repos='https://cloud.r-project.org')"
+      ```
+      For more detailed instruction, please see [irace README](https://github.com/mlopez-Ibanez/irace#readme)
 
 ## Usage
 
