@@ -80,6 +80,3 @@ def test_correct_exit():
             t2.cancel()
             break
     assert not q.empty()
-
-if __name__ == '__main__':
-    test_no_hang()
