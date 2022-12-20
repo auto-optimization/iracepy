@@ -2,7 +2,7 @@ import numpy as np
 from irace import irace
 import pandas as pd
 from multiprocessing import Process, Queue
-from threading import Timer, Thread
+from threading import Timer, Thread, Event
 from time import sleep
 
 def target_runner(experiment, scenario):
@@ -32,9 +32,17 @@ def test_no_hang():
     q = Queue()
     p = Process(target=start_irace, args=(q,))
     p.start()
-    Timer(0.5, sigterm_process, args=(p,)).start()
-    Timer(1, sigkill_process, args=(p,)).start()
-    sleep(1.5)
+    t1 = Timer(20, sigterm_process, args=(p,))
+    t2 = Timer(21, sigkill_process, args=(p,))
+    t1.start()
+    t2.start()
+    print("jfjfjfj")
+    for i in range(22):
+        sleep(1)
+        if not p.is_alive():
+            t1.cancel()
+            t2.cancel()
+            break
     assert not killed 
 
 def sigterm_process(p):
@@ -61,10 +69,17 @@ def test_correct_exit():
     q = Queue()
     p = Process(target=start_irace, args=(q,))
     p.start()
-    Timer(0.5, sigterm_process, args=(p,)).start()
-    Timer(1, sigkill_process, args=(p,)).start()
-    sleep(1.5)
+    t1 = Timer(20, sigterm_process, args=(p,))
+    t2 = Timer(21, sigkill_process, args=(p,))
+    t1.start()
+    t2.start()
+    for i in range(22):
+        sleep(1)
+        if not p.is_alive():
+            t1.cancel()
+            t2.cancel()
+            break
     assert not q.empty()
 
 if __name__ == '__main__':
-    test_correct_exit()
+    test_no_hang()
