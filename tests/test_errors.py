@@ -32,9 +32,9 @@ def test_no_hang():
     q = Queue()
     p = Process(target=start_irace, args=(q,))
     p.start()
-    Timer(0.1, sigterm_process, args=(p,)).start()
-    Timer(0.2, sigkill_process, args=(p,)).start()
-    sleep(0.3)
+    Timer(0.5, sigterm_process, args=(p,)).start()
+    Timer(1, sigkill_process, args=(p,)).start()
+    sleep(1.5)
     assert not killed 
 
 def sigterm_process(p):
@@ -61,9 +61,9 @@ def test_correct_exit():
     q = Queue()
     p = Process(target=start_irace, args=(q,))
     p.start()
-    Timer(0.1, sigterm_process, args=(p,)).start()
-    Timer(0.2, sigkill_process, args=(p,)).start()
-    sleep(0.3)
+    Timer(0.5, sigterm_process, args=(p,)).start()
+    Timer(1, sigkill_process, args=(p,)).start()
+    sleep(1.5)
     assert not q.empty()
 
 if __name__ == '__main__':
