@@ -2,10 +2,7 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 
-# FIXME: Properly initialize rpy2 to run interactively or not depending on the context. See issue https://github.com/auto-optimization/iracepy/issues/21 for more details.
 import os
-from rpy2.rinterface import embedded
-embedded._initr(interactive=False)
 
 from rpy2.robjects.packages import importr, PackageNotInstalledError
 import rpy2.robjects as ro
