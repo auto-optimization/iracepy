@@ -19,7 +19,7 @@ jobs:
         python-version: ["3.7", "3.11"]
         pip-args: ["", "--upgrade"]
         r-version: ["release"]
-        r-package-source: ["cran::irace", "github::MLopez-Ibanez/irace", "github::DE0CH/irace"]
+        r-package-source: ["cran::irace", "github::MLopez-Ibanez/irace"]
 
     steps:
     - uses: actions/checkout@v3
