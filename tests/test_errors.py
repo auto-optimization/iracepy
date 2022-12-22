@@ -17,20 +17,44 @@ defaults = pd.DataFrame(data=dict(
     one=[0.6]
 ))
 
-scenario = dict(
+scenario1 = dict(
     instances = np.arange(10),
     maxExperiments = 96,
     debugLevel = 0,
-    parallel = 1,
+    parallel = 2,
     logFile = ""
 )
 
+scenario2 = dict(
+    instances = np.arange(10),
+    maxExperiments = 96,
+    debugLevel = 0,
+    parallel = 2,
+    logFile = ""
+)
 killed = False
 
 
-def test_no_hang():
+def test_no_hang1():
     q = Queue()
-    p = Process(target=start_irace, args=(q,))
+    p = Process(target=start_irace, args=(q, scenario1))
+    p.start()
+    t1 = Timer(20, sigterm_process, args=(p,))
+    t2 = Timer(21, sigkill_process, args=(p,))
+    t1.start()
+    t2.start()
+    print("jfjfjfj")
+    for i in range(22):
+        sleep(1)
+        if not p.is_alive():
+            t1.cancel()
+            t2.cancel()
+            break
+    assert not killed 
+
+def test_no_hang2():
+    q = Queue()
+    p = Process(target=start_irace, args=(q, scenario2))
     p.start()
     t1 = Timer(20, sigterm_process, args=(p,))
     t2 = Timer(21, sigkill_process, args=(p,))
@@ -57,7 +81,7 @@ def sigkill_process(p):
         global killed
         killed = True
 
-def start_irace(q):
+def start_irace(q, scenario):
     tuner = irace(scenario, params, target_runner)
     tuner.set_initial(defaults)
     try:
@@ -65,9 +89,25 @@ def start_irace(q):
     except:
         q.put(0)
 
-def test_correct_exit():
+def test_correct_exit1():
     q = Queue()
-    p = Process(target=start_irace, args=(q,))
+    p = Process(target=start_irace, args=(q, scenario1))
+    p.start()
+    t1 = Timer(20, sigterm_process, args=(p,))
+    t2 = Timer(21, sigkill_process, args=(p,))
+    t1.start()
+    t2.start()
+    for i in range(22):
+        sleep(1)
+        if not p.is_alive():
+            t1.cancel()
+            t2.cancel()
+            break
+    assert not q.empty()
+
+def test_correct_exit2():
+    q = Queue()
+    p = Process(target=start_irace, args=(q, scenario2))
     p.start()
     t1 = Timer(20, sigterm_process, args=(p,))
     t2 = Timer(21, sigkill_process, args=(p,))
