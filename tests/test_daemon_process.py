@@ -7,7 +7,7 @@ from multiprocessing import Process
 
 import json
 def target_runner(experiment, scenario):
-    Process(target=lambda x: x, args=(1,)).start()
+    Process(target=print, args=(1,)).start()
     return dict(cost=experiment['configuration']['one'])
 
 
