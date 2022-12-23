@@ -15,6 +15,7 @@ from multiprocessing import Queue, Process
 import json
 from rpy2.rinterface_lib.sexp import NACharacterType
 from multiprocessing import Queue, Process
+import json
 
 irace_converter =  ro.default_converter + numpy2ri.converter + pandas2ri.converter
 
@@ -82,7 +83,7 @@ def run_with_catch(f, args, kwargs):
         res = dict(error=traceback.format_exc())
     return res
 
-def make_target_runner_parallel(aq: Queue, rq: Queue, check_output_target_runner, scenario_a, target_runner, has_worker):
+def make_target_runner_parallel(aq: Queue, rq: Queue, check_output_target_runner, scenario_a, target_runner, instances, has_worker):
     @ri.rternalize
     def parallel_runner(*args, **kwargs):
         try:
@@ -98,9 +99,14 @@ def make_target_runner_parallel(aq: Queue, rq: Queue, check_output_target_runner
                 experiment['configuration'] = OrderedDict(
                     (k,v) for k,v in experiment['configuration'].items() if not pd.isna(v)
                 )
+                # FIXME: Find out why floating point numbers are being used in 
+                # the first place and address the the root cause
+                experiment['id.instance'] = int(experiment['id.instance'])
+                experiment['id.configuration'] = int(experiment['id.configuration'])
                 if has_worker:
                     aq.put((i, experiment, scenario_a[0]))
                 else:
+                    experiment['instance'] = instances[experiment['id.instance'] - 1]
                     res = run_with_catch(target_runner, (experiment, scenario_a[0]), {})
                     res = check_output_target_runner(ListVector(res), scenario_a[1])
                     ans[i] = res
@@ -119,11 +125,12 @@ def make_target_runner_parallel(aq: Queue, rq: Queue, check_output_target_runner
             raise
     return parallel_runner
 
-def runner_worker(target_runner, aq: Queue, rq: Queue):
+def runner_worker(target_runner, instances, aq: Queue, rq: Queue):
     while True:
         i, experiment, scenario = aq.get()
         if i == -1:
             break
+        experiment['instance'] = instances[experiment['id.instance'] - 1]
         rq.put((i, run_with_catch(target_runner, (experiment, scenario), {})))
 
 def check_unsupported_scenarios(scenario):
@@ -145,8 +152,11 @@ class irace:
 
     def __init__(self, scenario, parameters_table, target_runner):
         self.scenario = scenario
+        self.instances = scenario.get('instances', None)
+
         if 'instances' in scenario:
-            self.scenario['instances'] = np.asarray(scenario['instances'])
+            self.scenario['instances'] = StrVector(list(map(lambda x: json.dumps(x, skipkeys=True, default=self.scenario.get('instanceObjectSerializer', lambda x: '<not serializable>')), self.scenario['instances'])))
+            self.scenario.pop('instanceObjectSerializer', None)
         with localconverter(irace_converter_hack):
             self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))
         # IMPORTANT: We need to save this in a variable or it will be garbage
@@ -162,7 +172,7 @@ class irace:
         self.workers: list[Process] = []
         if self.worker_count != 1:
             for i in range(self.worker_count):
-                self.workers.append(Process(target=runner_worker, args=(self.target_runner, self.target_aq, self.target_rq)))
+                self.workers.append(Process(target=runner_worker, args=(self.target_runner, self.instances, self.target_aq, self.target_rq)))
             for worker in self.workers:
                 worker.start()
             
@@ -200,7 +210,7 @@ class irace:
     def run(self):
         """Returns a Pandas DataFrame, one column per parameter and the row index are the configuration ID."""
         scenario_a = [None, None]
-        self.r_target_runner_parallel = make_target_runner_parallel(self.target_aq, self.target_rq, self._pkg.check_output_target_runner, scenario_a, self.target_runner, self.worker_count != 1)
+        self.r_target_runner_parallel = make_target_runner_parallel(self.target_aq, self.target_rq, self._pkg.check_output_target_runner, scenario_a, self.target_runner, self.instances, self.worker_count != 1)
         self.scenario['targetRunnerParallel'] = self.r_target_runner_parallel
 
         with localconverter(irace_converter_hack):
