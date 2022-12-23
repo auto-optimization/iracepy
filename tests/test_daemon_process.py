@@ -4,12 +4,15 @@ import numpy as np
 from irace import irace
 import pandas as pd
 from multiprocessing import Process
+import os
 
 import json
 def target_runner(experiment, scenario):
     Process(target=print, args=(1,)).start()
     return dict(cost=experiment['configuration']['one'])
 
+def is_windows():
+    return os.name == 'nt'
 
 params = '''
 one "" r (0, 1)
@@ -29,6 +32,8 @@ scenario = dict(
 
 
 def test():
+    if is_windows():
+        return
     tuner = irace(scenario, params, target_runner)
     tuner.set_initial(defaults)
     best_conf = tuner.run()
