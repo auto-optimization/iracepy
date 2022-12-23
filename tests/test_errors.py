@@ -26,7 +26,7 @@ scenario1 = dict(
     instances = np.arange(10),
     maxExperiments = 96,
     debugLevel = 0,
-    parallel = 2,
+    parallel = 1,
     logFile = ""
 )
 
