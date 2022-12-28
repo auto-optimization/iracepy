@@ -2,6 +2,7 @@ import numpy as np
 from irace import irace
 import os
 import pytest
+from utils import PropagatingThread
 
 DIM=10 # This works even with parallel
 LB = [-5.12]
@@ -50,7 +51,7 @@ scenario = dict(
     parallel= parallel, # It can run in parallel ! 
     logFile = "")
 
-def test_run():
+def run_irace(scenario, parameters_table, target_runner):
     tuner = irace(scenario, parameters_table, target_runner)
     tuner.set_initial_from_str(default_values)
     best_confs = tuner.run()
@@ -72,3 +73,11 @@ def test_fail_windows():
             tuner = irace(scenario, parameters_table, target_runner)
             tuner.run()
             
+
+def test_run():
+    run_irace(scenario, parameters_table, target_runner)
+
+def test_run_in_thread():
+    tuner_t = PropagatingThread(target=run_irace, args=(scenario, parameters_table, target_runner))
+    tuner_t.start()
+    tuner_t.join()

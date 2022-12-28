@@ -1,6 +1,8 @@
 import numpy as np 
 from irace import irace
 import pandas as pd
+import re
+from utils import PropagatingThread
 
 import json
 def target_runner(experiment, scenario):
@@ -35,9 +37,16 @@ def test():
     tuner = irace(scenario, params, target_runner)
     best_conf = tuner.run()
     print(best_conf)
+    for col in best_conf.columns:
+        assert not re.match(r'\..+\.', col) or col == '.ID.'
     for rowIndex, row in best_conf.iterrows(): #iterate over rows
         for columnIndex, v in row.items():
             assert pd.isna(v) \
                 or isinstance(v, str) \
                 or isinstance(v, float) \
                 or isinstance(v, int)
+
+def test_thread():
+    t = PropagatingThread(target=test)
+    t.start()
+    t.join()

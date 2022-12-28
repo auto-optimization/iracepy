@@ -7,28 +7,19 @@ import os
 from rpy2.robjects.packages import importr, PackageNotInstalledError
 import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri,numpy2ri
-numpy2ri.activate() # FIXME: This gives a deprecation warning but it is not clear how to replace it.
 from rpy2.robjects.conversion import localconverter
 from rpy2 import rinterface as ri
 from rpy2.rinterface_lib import na_values
+from rpy2.rinterface_lib.sexp import NACharacterType
 
-@ro.default_converter.rpy2py.register(ri.IntSexpVector)
-def to_int(obj):
-    return [int(v) if v != na_values.NA_Integer else pd.NA for v in obj]
+irace_converter =  ro.default_converter + numpy2ri.converter + pandas2ri.converter
 
-@ro.default_converter.rpy2py.register(ri.FloatSexpVector)
-def to_float(obj):
-    return [float(v) if v != na_values.NA_Real else pd.NA for v in obj]
+# FIXME: Make this the same as irace_converter. See https://github.com/auto-optimization/iracepy/issues/31.
+irace_converter_hack = numpy2ri.converter + ro.default_converter
 
-@ro.default_converter.rpy2py.register(ri.StrSexpVector)
-def to_str(obj):
-    return [str(v) if v != na_values.NA_Character else pd.NA for v in obj]
-
-@ro.default_converter.rpy2py.register(ri.BoolSexpVector)
-def to_bool(obj):
-    return [bool(v) if v != na_values.NA_Logical else pd.NA for v in obj]
-
-irace_converter = ro.default_converter + pandas2ri.converter
+@irace_converter.rpy2py.register(NACharacterType)
+def convert(o):
+    return None
 
 from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector, StrVector, ListVector, IntArray, Matrix, ListSexpVector,FloatSexpVector,IntSexpVector,StrSexpVector,BoolSexpVector
 from rpy2.robjects.functions import SignatureTranslatedFunction
@@ -46,6 +37,8 @@ def r_to_python(data):
         return data  # TODO: get the actual Python function
     elif isinstance(data, np.ndarray):
         return data
+    elif isinstance(data, pd.DataFrame):
+        return data
     elif data == ri.NULL:
         return None
     elif data == na_values.NA_Character:
@@ -55,11 +48,12 @@ def r_to_python(data):
             with localconverter(irace_converter):
               return ro.conversion.rpy2py(data)  
         elif data.rclass[0] == 'list':
-            if isinstance(data.names, ri.NULLType):
-                keys = range(len(data))
-            else:
-                keys = data.names 
-            return OrderedDict(zip(keys, [r_to_python(elt) for elt in data]))
+            with localconverter(irace_converter):
+                if isinstance(data.names, ri.NULLType):
+                    keys = range(len(data))
+                else:
+                    keys = data.names 
+                return OrderedDict(zip(keys, [r_to_python(elt) for elt in data]))
         elif data.rclass[0] in ['numeric','logical','integer','RTYPES.INTSXP','array','RTYPES.LGLSXP']:
             if len(data) == 1:
                 return data[0]
@@ -90,7 +84,8 @@ def make_target_runner(py_target_runner):
             (k,v) for k,v in py_experiment['configuration'].items() if not pd.isna(v)
         )
         try:
-            ret = py_target_runner(py_experiment, py_scenario)
+            with localconverter(irace_converter_hack):
+                ret = py_target_runner(py_experiment, py_scenario)
         except:
             traceback.print_exc()
             ret = dict(error=traceback.format_exc())
@@ -112,7 +107,8 @@ class irace:
         self.scenario = scenario
         if 'instances' in scenario:
             self.scenario['instances'] = np.asarray(scenario['instances'])
-        self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))
+        with localconverter(irace_converter_hack):
+            self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))
         # IMPORTANT: We need to save this in a variable or it will be garbage
         # collected by Python and crash later.
         self.r_target_runner = make_target_runner(target_runner)
@@ -130,12 +126,14 @@ class irace:
         return confs
 
     def set_initial_from_file(self, filename):
-        confs = self.read_configurations(filename = filename)
+        with localconverter(irace_converter):
+            confs = self.read_configurations(filename = filename)
         self.set_initial(confs)
         return confs
     
     def set_initial_from_str(self, text):
-        confs = self.read_configurations(text = text)
+        with localconverter(irace_converter):
+            confs = self.read_configurations(text = text)
         self.set_initial(confs)
         return confs
     
@@ -149,7 +147,8 @@ class irace:
     def run(self):
         """Returns a Pandas DataFrame, one column per parameter and the row index are the configuration ID."""
         self.scenario['targetRunner'] = self.r_target_runner
-        res = self._pkg.irace(ListVector(self.scenario), self.parameters)
+        with localconverter(irace_converter_hack):
+            res = self._pkg.irace(ListVector(self.scenario), self.parameters)
         with localconverter(irace_converter):
             res = ro.conversion.rpy2py(res)
         # Remove metadata columns.
