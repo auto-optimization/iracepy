@@ -1,8 +1,8 @@
 from collections import OrderedDict
+import os
 import numpy as np
 import pandas as pd
-
-import os
+import traceback
 
 from rpy2.robjects.packages import importr, PackageNotInstalledError
 import rpy2.robjects as ro
@@ -11,6 +11,8 @@ from rpy2.robjects.conversion import localconverter
 from rpy2 import rinterface as ri
 from rpy2.rinterface_lib import na_values
 from rpy2.rinterface_lib.sexp import NACharacterType
+from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector, StrVector, ListVector, IntArray, Matrix, ListSexpVector,FloatSexpVector,IntSexpVector,StrSexpVector,BoolSexpVector
+from rpy2.robjects.functions import SignatureTranslatedFunction
 
 irace_converter =  ro.default_converter + numpy2ri.converter + pandas2ri.converter
 # FIXME: Make this the same as irace_converter. See https://github.com/auto-optimization/iracepy/issues/31.
@@ -19,10 +21,6 @@ irace_converter_hack = numpy2ri.converter + ro.default_converter
 @irace_converter.rpy2py.register(NACharacterType)
 def convert(o):
     return None
-
-from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector, StrVector, ListVector, IntArray, Matrix, ListSexpVector,FloatSexpVector,IntSexpVector,StrSexpVector,BoolSexpVector
-from rpy2.robjects.functions import SignatureTranslatedFunction
-import traceback
 
 base = importr('base')
 
