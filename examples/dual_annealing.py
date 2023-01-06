@@ -12,8 +12,9 @@ def target_runner(experiment, scenario, lb = LB, ub = UB):
     func = lambda x: np.sum(x*x - DIM*np.cos(2*np.pi*x)) + DIM * np.size(x)
     lw = lb * DIM
     up = ub * DIM
-    # Some configurations produced a warning, but the values are within the limits. That seems a bug in scipy. TODO: Report the bug to scipy.
-    print(f'{experiment["configuration"]}')
+    if scenario['debugLevel'] > 0:
+        # Some configurations produced a warning, but the values are within the limits. That seems a bug in scipy. TODO: Report the bug to scipy.
+        print(f'{experiment["configuration"]}')
     ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=experiment['seed'], maxfun = 1e4,
                          **experiment['configuration'])
     return dict(cost=ret.fun)
@@ -41,7 +42,7 @@ scenario = dict(
     maxExperiments = 500,
     debugLevel = 3,
     digits = 5,
-    parallel=2, # It can run in parallel ! 
+    parallel=4, # It can run in parallel ! 
     logFile = "")
 
 
