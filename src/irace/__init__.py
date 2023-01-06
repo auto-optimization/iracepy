@@ -13,7 +13,6 @@ from rpy2.rinterface_lib import na_values
 from rpy2.rinterface_lib.sexp import NACharacterType
 
 irace_converter =  ro.default_converter + numpy2ri.converter + pandas2ri.converter
-
 # FIXME: Make this the same as irace_converter. See https://github.com/auto-optimization/iracepy/issues/31.
 irace_converter_hack = numpy2ri.converter + ro.default_converter
 
@@ -71,11 +70,11 @@ def r_to_python(data):
             raise KeyError(f'Could not proceed, type {type(data)} of rclass ({data.rclass[0]}) is not defined!')
     return data  # We reached the end of recursion
 
-def make_target_runner(py_target_runner):
+def make_target_runner(context):
     @ri.rternalize
     def tmp_r_target_runner(experiment, scenario):
+        py_scenario = context['py_scenario']
         py_experiment = r_to_python(experiment)
-        py_scenario = r_to_python(scenario)
         # FIXME: How to skip this conversion?
         py_experiment['configuration'] = py_experiment['configuration'].to_dict('records')[0]
         # FIXME: We should also filter 'switches'
@@ -85,7 +84,7 @@ def make_target_runner(py_target_runner):
         )
         try:
             with localconverter(irace_converter_hack):
-                ret = py_target_runner(py_experiment, py_scenario)
+                ret = context['py_target_runner'](py_experiment, py_scenario)
         except:
             traceback.print_exc()
             ret = dict(error=traceback.format_exc())
@@ -97,8 +96,11 @@ def check_windows(scenario):
         raise NotImplementedError('Parallel running on windows is not supported yet. Follow https://github.com/auto-optimization/iracepy/issues/16 for updates. Alternatively, use Linux or MacOS or the irace R package directly.')
 
 class irace:
-    # Imported R package
+    # Import irace R package
     try:
+        # FiXME: This may generate an R warning:
+        #   library ‘/usr/local/lib/R/site-library’ contains no packages
+        # How to suppress it?
         _pkg = importr("irace")
     except PackageNotInstalledError as e:
         raise PackageNotInstalledError('The R package irace needs to be installed for this python binding to work. Consider running `Rscript -e "install.packages(\'irace\', repos=\'https://cloud.r-project.org\')"` in your shell. See more details at https://github.com/mLopez-Ibanez/irace#quick-start') from e
@@ -108,10 +110,11 @@ class irace:
         if 'instances' in scenario:
             self.scenario['instances'] = np.asarray(scenario['instances'])
         with localconverter(irace_converter_hack):
-            self.parameters = self._pkg.readParameters(text = parameters_table, digits = scenario.get('digits', 4))
+            self.parameters = self._pkg.readParameters(text = parameters_table, digits = self.scenario.get('digits', 4))
         # IMPORTANT: We need to save this in a variable or it will be garbage
         # collected by Python and crash later.
-        self.r_target_runner = make_target_runner(target_runner)
+        self.context = {'py_target_runner' : target_runner,
+                        'py_scenario': self.scenario }
         check_windows(scenario)
 
     def read_configurations(self, filename=None, text=None):
@@ -119,7 +122,6 @@ class irace:
             confs = self._pkg.readConfigurationsFile(filename = filename, parameters = self.parameters)
         else:
             confs = self._pkg.readConfigurationsFile(text = text, parameters = self.parameters)
-        # FIXME: can we save this converter to use it every where?
         with localconverter(irace_converter):
             confs = ro.conversion.rpy2py(confs)
         assert isinstance(confs,pd.DataFrame)
@@ -146,10 +148,20 @@ class irace:
         
     def run(self):
         """Returns a Pandas DataFrame, one column per parameter and the row index are the configuration ID."""
+        # IMPORTANT: We need to save this in a variable or it will be garbage
+        # collected by Python and crash later.
+        self.r_target_runner = make_target_runner(self.context)
         self.scenario['targetRunner'] = self.r_target_runner
         with localconverter(irace_converter_hack):
-            res = self._pkg.irace(ListVector(self.scenario), self.parameters)
+            self.r_scenario = self._pkg.checkScenario(ListVector(self.scenario))
+        self.scenario = r_to_python(self.r_scenario)
+        self.context['py_scenario'] = self.scenario
+        # According to Deyao, keeping r_target_runner in the python scenario
+        # crashes `multiprocessing.Queue`.
+        self.scenario['targetRunner'] = None
+        
         with localconverter(irace_converter):
+            res = self._pkg.irace(self.r_scenario, self.parameters)
             res = ro.conversion.rpy2py(res)
         # Remove metadata columns.
         res = res.loc[:, ~res.columns.str.startswith('.')]
