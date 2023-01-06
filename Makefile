@@ -4,3 +4,9 @@ install:
 
 test: install
 	python3 -m pytest --color=yes -raXxs
+
+examples: install
+	@for file in examples/*.py; do \
+		python3 $$file; \
+	done
+
