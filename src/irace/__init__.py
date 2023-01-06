@@ -3,9 +3,10 @@ import os
 import numpy as np
 import pandas as pd
 import traceback
+import warnings
 
-from rpy2.robjects.packages import importr, PackageNotInstalledError
 import rpy2.robjects as ro
+from rpy2.robjects.packages import importr, PackageNotInstalledError
 from rpy2.robjects import pandas2ri,numpy2ri
 from rpy2.robjects.conversion import localconverter
 from rpy2 import rinterface as ri
@@ -13,7 +14,9 @@ from rpy2.rinterface_lib import na_values
 from rpy2.rinterface_lib.sexp import NACharacterType
 from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector, StrVector, ListVector, IntArray, Matrix, ListSexpVector,FloatSexpVector,IntSexpVector,StrSexpVector,BoolSexpVector
 from rpy2.robjects.functions import SignatureTranslatedFunction
+from rpy2.rinterface import RRuntimeWarning
 
+rpy2conversion = ro.conversion.get_conversion()
 irace_converter =  ro.default_converter + numpy2ri.converter + pandas2ri.converter
 # FIXME: Make this the same as irace_converter. See https://github.com/auto-optimization/iracepy/issues/31.
 irace_converter_hack = numpy2ri.converter + ro.default_converter
@@ -43,7 +46,7 @@ def r_to_python(data):
     elif hasattr(data, "rclass"):
         if data.rclass[0] == 'data.frame':
             with localconverter(irace_converter):
-              return ro.conversion.rpy2py(data)  
+              return rpy2conversion.rpy2py(data)  
         elif data.rclass[0] == 'list':
             with localconverter(irace_converter):
                 if isinstance(data.names, ri.NULLType):
@@ -81,8 +84,7 @@ def make_target_runner(context):
             (k,v) for k,v in py_experiment['configuration'].items() if not pd.isna(v)
         )
         try:
-            with localconverter(irace_converter_hack):
-                ret = context['py_target_runner'](py_experiment, py_scenario)
+            ret = context['py_target_runner'](py_experiment, py_scenario)
         except:
             traceback.print_exc()
             ret = dict(error=traceback.format_exc())
@@ -109,8 +111,6 @@ class irace:
             self.scenario['instances'] = np.asarray(scenario['instances'])
         with localconverter(irace_converter_hack):
             self.parameters = self._pkg.readParameters(text = parameters_table, digits = self.scenario.get('digits', 4))
-        # IMPORTANT: We need to save this in a variable or it will be garbage
-        # collected by Python and crash later.
         self.context = {'py_target_runner' : target_runner,
                         'py_scenario': self.scenario }
         check_windows(scenario)
@@ -121,7 +121,7 @@ class irace:
         else:
             confs = self._pkg.readConfigurationsFile(text = text, parameters = self.parameters)
         with localconverter(irace_converter):
-            confs = ro.conversion.rpy2py(confs)
+            confs = rpy2conversion.rpy2py(confs)
         assert isinstance(confs,pd.DataFrame)
         return confs
 
@@ -146,7 +146,7 @@ class irace:
         
     def run(self):
         """Returns a Pandas DataFrame, one column per parameter and the row index are the configuration ID."""
-        # IMPORTANT: We need to save this in a variable or it will be garbage
+        # IMPORTANT: We need to save the output of make_target_runner in a variable or it will be garbage
         # collected by Python and crash later.
         self.r_target_runner = make_target_runner(self.context)
         self.scenario['targetRunner'] = self.r_target_runner
@@ -160,7 +160,7 @@ class irace:
         
         with localconverter(irace_converter):
             res = self._pkg.irace(self.r_scenario, self.parameters)
-            res = ro.conversion.rpy2py(res)
+            res = rpy2conversion.rpy2py(res)
         # Remove metadata columns.
         res = res.loc[:, ~res.columns.str.startswith('.')]
         return res
