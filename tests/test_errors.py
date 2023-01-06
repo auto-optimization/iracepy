@@ -4,15 +4,11 @@ import pandas as pd
 from multiprocessing import Process, Queue
 from threading import Timer, Thread, Event
 from time import sleep
-import os
 
 BASE_TIME = 100
 
 def target_runner(experiment, scenario):
     raise ValueError()
-
-def is_windows():
-    return os.name == 'nt'
 
 params = '''
 one "" r (0, 1)
@@ -58,8 +54,6 @@ def test_no_hang1():
     assert not killed 
 
 def test_no_hang2():
-    if is_windows():
-        return
     q = Queue()
     p = Process(target=start_irace, args=(q, scenario2))
     p.start()
@@ -67,7 +61,6 @@ def test_no_hang2():
     t2 = Timer(BASE_TIME + 1, sigkill_process, args=(p,))
     t1.start()
     t2.start()
-    print("jfjfjfj")
     for i in range(BASE_TIME + 2):
         sleep(1)
         if not p.is_alive():
@@ -113,8 +106,6 @@ def test_correct_exit1():
     assert not q.empty()
 
 def test_correct_exit2():
-    if is_windows():
-        return
     q = Queue()
     p = Process(target=start_irace, args=(q, scenario2))
     p.start()

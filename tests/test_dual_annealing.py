@@ -37,18 +37,13 @@ instances = np.arange(100)
 
 # See https://mlopez-ibanez.github.io/irace/reference/defaultScenario.html
 
-if os.name == 'nt':
-    parallel = 1
-else:
-    parallel = 2
-
 scenario = dict(
     instances = instances,
     maxExperiments = 180,
     debugLevel = 3,
     seed = 123,
     digits = 5,
-    parallel= parallel, # It can run in parallel ! 
+    parallel= 2, # It can run in parallel ! 
     logFile = "")
 
 def run_irace(scenario, parameters_table, target_runner):
@@ -56,23 +51,6 @@ def run_irace(scenario, parameters_table, target_runner):
     tuner.set_initial_from_str(default_values)
     best_confs = tuner.run()
     # FIXME: assert type Pandas DataFrame
-    print(best_confs)
-
-def test_fail_windows():
-    # FIXME: remove when https://github.com/auto-optimization/iracepy/issues/16 is closed. 
-    if os.name == 'nt':
-        with pytest.raises(NotImplementedError):
-            scenario = dict(
-                instances = instances,
-                maxExperiments = 180,
-                debugLevel = 3,
-                seed = 123,
-                digits = 5,
-                parallel= 2, # It can run in parallel ! 
-                logFile = "")
-            tuner = irace(scenario, parameters_table, target_runner)
-            tuner.run()
-            
 
 def test_run():
     run_irace(scenario, parameters_table, target_runner)

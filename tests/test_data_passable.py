@@ -12,6 +12,10 @@ def target_runner(experiment, scenario):
     else:
         return dict(cost=1)
 
+def target_runner2(experiment, scenario):
+    if experiment['id.instance'] == 1:
+        experiment['instance'].put(1335)
+    return dict(cost=1)
 
 params = '''
 one "" c ('0', '1')
@@ -35,3 +39,45 @@ def test():
     best_conf = tuner.run()
     assert q.get() == 124
     
+def test_instances():
+    q = Queue()
+    scenario = dict(
+        instances = [q],
+        maxExperiments = 180,
+        debugLevel = 0,
+        parallel = 1,
+        logFile = "",
+        seed = 123
+    )
+    tuner = irace(scenario, params, target_runner2)
+    best_conf = tuner.run()
+    assert q.get() == 1335
+
+def test_instances2():
+    q = Queue()
+    scenario = dict(
+        instances = [q],
+        maxExperiments = 180,
+        debugLevel = 0,
+        parallel = 2,
+        logFile = "",
+        seed = 123
+    )
+    tuner = irace(scenario, params, target_runner2)
+    best_conf = tuner.run()
+    assert q.get() == 1335
+
+def test_default_serializer():
+    q = Queue()
+    scenario = dict(
+        instances = [q],
+        maxExperiments = 180,
+        debugLevel = 0,
+        parallel = 2,
+        logFile = "",
+        seed = 123,
+        instanceObjectSerializer = lambda x: 'hello world'
+    )
+    tuner = irace(scenario, params, target_runner2)
+    best_conf = tuner.run()
+    assert q.get() == 1335
