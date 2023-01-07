@@ -155,7 +155,7 @@ class irace:
         self.scenario = r_to_python(self.r_scenario)
         self.context['py_scenario'] = self.scenario
         # According to Deyao, keeping r_target_runner in the python scenario
-        # crashes `multiprocessing.Queue`.
+        # crashes `multiprocessing.Queue`. See issue https://github.com/rpy2/rpy2/issues/970
         self.scenario['targetRunner'] = None
         
         with localconverter(irace_converter):
