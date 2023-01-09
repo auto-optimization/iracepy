@@ -15,6 +15,8 @@ from rpy2.rinterface_lib.sexp import NACharacterType
 from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector, StrVector, ListVector, IntArray, Matrix, ListSexpVector,FloatSexpVector,IntSexpVector,StrSexpVector,BoolSexpVector
 from rpy2.robjects.functions import SignatureTranslatedFunction
 from rpy2.rinterface import RRuntimeWarning
+import json
+
 
 rpy2conversion = ro.conversion.get_conversion()
 irace_converter =  ro.default_converter + numpy2ri.converter + pandas2ri.converter
@@ -83,6 +85,7 @@ def make_target_runner(context):
         py_experiment['configuration'] = OrderedDict(
             (k,v) for k,v in py_experiment['configuration'].items() if not pd.isna(v)
         )
+        py_experiment['instance'] = context['py_instances'][int(py_experiment['id.instance']) - 1]
         try:
             ret = context['py_target_runner'](py_experiment, py_scenario)
         except:
@@ -94,7 +97,6 @@ def make_target_runner(context):
 def check_windows(scenario):
     if scenario.get('parallel', 1) != 1 and os.name == 'nt':
         raise NotImplementedError('Parallel running on windows is not supported yet. Follow https://github.com/auto-optimization/iracepy/issues/16 for updates. Alternatively, use Linux or MacOS or the irace R package directly.')
-
 class irace:
     # Import irace R package
     try:
@@ -107,12 +109,20 @@ class irace:
 
     def __init__(self, scenario, parameters_table, target_runner):
         self.scenario = scenario
+        self.instances = scenario.get('instances', None)
+        self.context = {}
         if 'instances' in scenario:
-            self.scenario['instances'] = np.asarray(scenario['instances'])
+            self.context.update({
+                'py_instances': self.scenario['instances'],
+            })
+            self.scenario['instances'] = StrVector(list(map(lambda x: json.dumps(x, skipkeys=True, default=self.scenario.get('instanceObjectSerializer', lambda x: '<not serializable>')), self.scenario['instances'])))
+            self.scenario.pop('instanceObjectSerializer', None)
         with localconverter(irace_converter_hack):
             self.parameters = self._pkg.readParameters(text = parameters_table, digits = self.scenario.get('digits', 4))
-        self.context = {'py_target_runner' : target_runner,
-                        'py_scenario': self.scenario }
+        self.context.update({
+            'py_target_runner' : target_runner,
+            'py_scenario': self.scenario,
+        })
         check_windows(scenario)
 
     def read_configurations(self, filename=None, text=None):
