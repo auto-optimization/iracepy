@@ -48,7 +48,6 @@ def test_no_hang1():
     t2 = Timer(21, sigkill_process, args=(p,))
     t1.start()
     t2.start()
-    print("jfjfjfj")
     for i in range(22):
         sleep(1)
         if not p.is_alive():
@@ -67,7 +66,6 @@ def test_no_hang2():
     t2 = Timer(BASE_TIME + 1, sigkill_process, args=(p,))
     t1.start()
     t2.start()
-    print("jfjfjfj")
     for i in range(BASE_TIME + 2):
         sleep(1)
         if not p.is_alive():
