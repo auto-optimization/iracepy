@@ -4,10 +4,10 @@ name: Run tests
 on:
   push:
     branches:
-    - main
+    - interface-draft
   pull_request:
     branches:
-    - main
+    - interface-draft
   workflow_dispatch:
 
 
@@ -23,7 +23,7 @@ jobs:
         python-version: ["3.7", "3.11"]
         pip-args: ["", "--upgrade"]
         r-version: ["release"]
-        r-package-source: ["cran::irace", "github::MLopez-Ibanez/irace"]
+        r-package-source: ["github::DE0CH/irace"]
 
     steps:
     - uses: actions/checkout@v3
