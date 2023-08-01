@@ -16,6 +16,7 @@ def target_runner(experiment, scenario, lb = LB, ub = UB):
         # Some configurations produced a warning, but the values are within the limits. That seems a bug in scipy. TODO: Report the bug to scipy.
         print(f'{experiment["configuration"]}')
     ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=experiment['seed'], maxfun = 1e4,
+                         # The following line unpacks the dictionary experiment['configuration']: https://reference.codeproject.com/python3/dictionaries/python-dictionary-unpack
                          **experiment['configuration'])
     return dict(cost=ret.fun)
 

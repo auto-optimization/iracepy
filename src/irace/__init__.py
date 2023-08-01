@@ -6,6 +6,7 @@ import traceback
 import warnings
 
 import rpy2.robjects as ro
+import rpy2.robjects.packages as rpackages
 from rpy2.robjects.packages import importr, PackageNotInstalledError
 from rpy2.robjects import pandas2ri,numpy2ri
 from rpy2.robjects.conversion import localconverter
@@ -16,6 +17,15 @@ from rpy2.robjects.vectors import DataFrame, BoolVector, FloatVector, IntVector,
 from rpy2.robjects.functions import SignatureTranslatedFunction
 from rpy2.rinterface import RRuntimeWarning
 
+from rpy2.rinterface_lib.callbacks import logger as rpy2_logger
+import logging
+
+# FIXME: This silences all warnings, but we only want to silence:
+#   library ‘/usr/local/lib/R/site-library’ contains no packages
+#
+rpy2_logger.setLevel(logging.ERROR)   # will display errors, but not warnings
+base = importr('base')
+
 rpy2conversion = ro.conversion.get_conversion()
 irace_converter =  ro.default_converter + numpy2ri.converter + pandas2ri.converter
 # FIXME: Make this the same as irace_converter. See https://github.com/auto-optimization/iracepy/issues/31.
@@ -25,7 +35,6 @@ irace_converter_hack = numpy2ri.converter + ro.default_converter
 def convert(o):
     return None
 
-base = importr('base')
 
 # FIXME: Make this into a conversion function
 def r_to_python(data):
@@ -95,16 +104,28 @@ def check_windows(scenario):
     if scenario.get('parallel', 1) != 1 and os.name == 'nt':
         raise NotImplementedError('Parallel running on windows is not supported yet. Follow https://github.com/auto-optimization/iracepy/issues/16 for updates. Alternatively, use Linux or MacOS or the irace R package directly.')
 
+def install_irace():
+    packnames = ('irace')
+    # import R's utility package
+    utils = importr('utils')
+    # Selectively install what needs to be installed.
+    names_to_install = [x for x in packnames if not rpackages.isinstalled(x)]
+    if len(names_to_install) > 0:
+        utils.install_packages(StrVector(names_to_install), repos = "https://cloud.r-project.org", verbose=True)
+
 class irace:
+    if not rpackages.isinstalled('irace'):
+        install_irace()
     # Import irace R package
     try:
-        # FiXME: This may generate an R warning:
-        #   library ‘/usr/local/lib/R/site-library’ contains no packages
-        # How to suppress it?
         _pkg = importr("irace")
     except PackageNotInstalledError as e:
         raise PackageNotInstalledError('The R package irace needs to be installed for this python binding to work. Consider running `Rscript -e "install.packages(\'irace\', repos=\'https://cloud.r-project.org\')"` in your shell. See more details at https://github.com/mLopez-Ibanez/irace#quick-start') from e
 
+    @classmethod
+    def version(cls):
+        return cls._pkg.irace_version[0]
+    
     def __init__(self, scenario, parameters_table, target_runner):
         self.scenario = scenario
         if 'instances' in scenario:
@@ -143,7 +164,7 @@ class irace:
         assert isinstance(x, np.recarray)
         self.scenario['initConfigurations'] = x
         return self
-        
+
     def run(self):
         """Returns a Pandas DataFrame, one column per parameter and the row index are the configuration ID."""
         # IMPORTANT: We need to save the output of make_target_runner in a variable or it will be garbage
