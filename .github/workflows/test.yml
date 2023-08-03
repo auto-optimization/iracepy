@@ -67,9 +67,6 @@ jobs:
       run: python3 -m pip install -r tests/requirements.txt
 
     - name: pytest
-      env:
-        COLUMNS: 120
-        PYTHONPATH: src
       run: python3 -m pytest --color=yes -raXxs --cov --cov-report=xml
 
     - name: Upload coverage to Codecov
