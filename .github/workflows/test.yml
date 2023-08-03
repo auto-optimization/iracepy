@@ -16,7 +16,9 @@ jobs:
     if: "! contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ${{ matrix.os }}
     name: Test ${{ matrix.os }} (${{ matrix.python-version }}) (pip ${{ matrix.pip-args }}) (${{ matrix.r-version }}) (${{ matrix.r-package-source }})
-    strategy:
+  env: 
+    GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+  strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
@@ -48,10 +50,7 @@ jobs:
     - name: Install github::MLopez-Ibanez/irace
       if: ${{ matrix.r-package-source == 'github::MLopez-Ibanez/irace' }}
       run: |
-        pat = Sys.getenv("GITHUB_PAT")
-        Sys.unsetenv("GITHUB_PAT")
         remotes::install_github('MLopez-Ibanez/irace', upgrade = 'never')
-        Sys.setenv(GITHUB_PAT = pat)
       shell: Rscript {0}
 
     - uses: r-lib/actions/setup-r-dependencies@v2
