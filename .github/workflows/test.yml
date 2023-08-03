@@ -41,7 +41,6 @@ jobs:
 
     - uses: r-lib/actions/setup-r-dependencies@v2
       with:
-        extra-packages: cran::XML
         packages: ${{ matrix.r-package-source }}
         dependencies: '"hard"'
         pak-version: devel
