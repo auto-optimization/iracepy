@@ -86,7 +86,8 @@ def make_target_runner(context):
         py_scenario = context['py_scenario']
         py_experiment = r_to_python(experiment)
         # FIXME: How to skip this conversion?
-        py_experiment['configuration'] = py_experiment['configuration'].to_dict('records')[0]
+        if not isinstance(py_experiment['configuration'], OrderedDict):
+            py_experiment['configuration'] = py_experiment['configuration'].to_dict('records')[0]
         # FIXME: We should also filter 'switches'
         # Filter all the NaN from keys in the dictionary
         py_experiment['configuration'] = OrderedDict(
