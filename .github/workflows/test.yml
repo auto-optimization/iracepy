@@ -16,9 +16,9 @@ jobs:
     if: "! contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ${{ matrix.os }}
     name: Test ${{ matrix.os }} (${{ matrix.python-version }}) (pip ${{ matrix.pip-args }}) (${{ matrix.r-version }}) (${{ matrix.r-package-source }})
-  env: 
-    GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-  strategy:
+    env: 
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
