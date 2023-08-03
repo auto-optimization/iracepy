@@ -40,19 +40,19 @@ jobs:
         use-public-rspm: true
 
     - uses: r-lib/actions/setup-r-dependencies@v2
-      if: ${{ matrix.r-package-source == "github::MLopez-Ibanez/irace" }}
+      if: ${{ matrix.r-package-source == 'github::MLopez-Ibanez/irace' }}
       with:
         packages: remotes
         pak-version: devel
 
     - name: Install github::MLopez-Ibanez/irace
-      if: ${{ matrix.r-package-source == "github::MLopez-Ibanez/irace" }}
+      if: ${{ matrix.r-package-source == 'github::MLopez-Ibanez/irace' }}
       run: |
-        remotes::install_github("MLopez-Ibanez/irace", upgrade = "never")
+        remotes::install_github('MLopez-Ibanez/irace', upgrade = 'never')
       shell: Rscript {0}
 
     - uses: r-lib/actions/setup-r-dependencies@v2
-      if: ${{ matrix.r-package-source == "cran::irace" }}
+      if: ${{ matrix.r-package-source == 'cran::irace' }}
       with:
         packages: ${{ matrix.r-package-source }}
         dependencies: '"hard"'
