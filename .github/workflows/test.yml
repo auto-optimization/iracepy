@@ -67,7 +67,10 @@ jobs:
       run: python3 -m pip install -r tests/requirements.txt
 
     - name: pytest
-      run: python3 -m pytest --color=yes -raXxs --cov --cov-report=xml
+      run: python3 -m pytest -r aXxs --color=auto -v -v
+
+    - name: pytest
+      run: python3 -m pytest --color=yes -r aXxs --cov --cov-report=xml
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
