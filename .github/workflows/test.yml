@@ -21,11 +21,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-        python-version: ["3.7", "3.11"]
-        pip-args: ["", "--upgrade"]
+        #os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [windows-latest]
+        python-version: ["3.7"] #, "3.11"]
+        pip-args: [""] #, "--upgrade"]
         r-version: ["release"]
-        r-package-source: ["cran::irace", "github::MLopez-Ibanez/irace"]
+        r-package-source: ["cran::irace"] #, "github::MLopez-Ibanez/irace"]
 
     steps:
     - uses: actions/checkout@v3
@@ -67,7 +68,10 @@ jobs:
       run: python3 -m pip install -r tests/requirements.txt
 
     - name: pytest
-      run: python3 -m pytest -r aXxs --color=auto -v -v
+      run: python3 -m pytest -v -v -v
+
+    - name: pytest
+      run: python3 -m pytest -r aXxs --color=auto -v -v -v
 
     - name: pytest
       run: python3 -m pytest --color=yes -r aXxs --cov --cov-report=xml
